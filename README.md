@@ -1,109 +1,33 @@
-# probability-project-hospital-bed-occupancy
----
+# Hospital Bed Occupancy Forecasting (Monte Carlo Simulation)
 
-# 📊 Hospital Bed Occupancy Simulation & Forecasting
+## Overview
 
-A simulation-driven decision support system for analyzing hospital bed utilization under uncertainty. This project combines **stochastic modeling**, **time-series aggregation**, and a **web interface** to evaluate occupancy dynamics and overflow risk.
+This project models and predicts hospital bed occupancy using probabilistic simulation. It uses historical admission and discharge data to estimate future occupancy trends, identify potential overflow situations, and support capacity planning decisions.
 
----
+The system is implemented in two forms:
 
-## 🔍 Overview
-
-Efficient hospital capacity planning requires understanding variability in patient flow. This project models:
-
-* Daily **admissions** (inflow)
-* Daily **discharges** (outflow)
-* Finite **bed capacity constraints**
-
-Using repeated simulations, the system estimates:
-
-* Expected occupancy levels
-* Worst-case utilization
-* Probability and magnitude of overflow
-* Temporal evolution of bed usage (time-series)
+* **CLI (Command-Line Tool):** Runs simulations and displays graphs locally
+* **Web Application:** Allows users to upload data and visualize results interactively
 
 ---
 
-## 🧠 Core Methodology
+## Problem
 
-### 1. Discrete-Time System Model
+Hospitals have limited bed capacity. Due to uncertainty in patient arrivals and discharges, it is difficult to predict whether demand will exceed available resources.
 
-We model hospital occupancy as a discrete-time process:
+This project answers:
 
-[
-O_t = \min\left(C,; O_{t-1} + A_t - D_t \right)
-]
-
-Where:
-
-* (O_t): occupancy at time (t)
-* (A_t): admissions
-* (D_t): discharges
-* (C): bed capacity
-
-Overflow occurs when:
-[
-O_{t-1} + A_t - D_t > C
-]
+* How will occupancy evolve over time?
+* What is the risk of exceeding capacity?
+* When are critical overload periods likely?
 
 ---
 
-### 2. Monte Carlo Simulation
+## Approach
 
-To capture variability and uncertainty:
+### Data
 
-* The system is simulated over multiple runs (typically (N = 1000))
-* Each run produces a full occupancy trajectory
-* Aggregation yields statistical estimates
-
-Outputs:
-
-* Mean occupancy
-* Maximum occupancy (worst-case)
-* Overflow probability:
-  [
-  P(\text{overflow}) = \frac{\text{# runs with overflow}}{N}
-  ]
-* Total overflow volume
-
----
-
-### 3. Time-Series Aggregation
-
-Instead of static distributions, the model computes:
-
-[
-\bar{O}*t = \frac{1}{N} \sum*{i=1}^{N} O_t^{(i)}
-]
-
-This produces a **time-series curve** representing expected occupancy over time.
-
----
-
-## ⚙️ Project Structure
-
-```plaintext
-hospital_project/
-│
-├── app.py              # Flask web application (UI + visualization)
-├── simulation.py       # Core stochastic simulation engine
-├── cli.py              # Command-line interface for quick execution
-│
-├── templates/          # HTML templates
-│   ├── index.html
-│   └── result.html
-│
-├── static/             # Optional CSS / assets
-│
-└── data/
-    └── sample.csv      # Input dataset
-```
-
----
-
-## 📁 Input Data Format
-
-CSV file with two columns:
+Input is a CSV file with daily records:
 
 ```csv
 admissions,discharges
@@ -112,42 +36,74 @@ admissions,discharges
 ...
 ```
 
-Constraints:
+### Simulation Logic
 
-* One row = one day
-* Columns must be named exactly:
+Occupancy is updated daily as:
 
-  * `admissions`
-  * `discharges`
+[
+\text{Occupancy} = \text{Previous Occupancy} + \text{Admissions} - \text{Discharges}
+]
 
----
+### Monte Carlo Concept
 
-## 🚀 Usage
+Instead of running the model once, the simulation can:
 
-### 1. Run Web Application
+* Randomly sample from historical data
+* Run multiple iterations
+* Generate a distribution of possible outcomes
 
-```bash
-python app.py
-```
-
-Open browser:
-
-```
-http://127.0.0.1:5000/
-```
-
-Features:
-
-* Upload dataset
-* Specify bed capacity
-* View:
-
-  * Key metrics
-  * Time-series occupancy plot
+This helps estimate probabilities rather than a single deterministic result.
 
 ---
 
-### 2. Run Simulation via CLI
+## Outputs
+
+### Metrics
+
+* Average Occupancy
+* Peak (Worst Case) Occupancy
+* Overflow Probability (Occupancy > Capacity)
+* Total Overflow (excess patients)
+
+### Visualizations
+
+1. **Occupancy vs Time**
+
+   * Shows daily bed usage
+   * Includes capacity line (150 beds)
+
+2. **Overflow vs Time**
+
+   * Shows number of patients exceeding capacity
+   * Highlights critical days
+
+---
+
+## Project Structure
+
+```
+project/
+│
+├── cli.py              # Run simulation + plots
+├── app.py              # Flask web application
+│
+├── data/
+│   └── sample.csv      # Input dataset
+│
+├── templates/
+│   ├── index.html
+│   └── result.html
+│
+└── static/             # Generated plots
+```
+
+---
+
+## How to Run
+
+### 1. CLI Simulation
+
+Run from project folder:
 
 ```bash
 python cli.py
@@ -155,101 +111,63 @@ python cli.py
 
 Outputs:
 
-* Average occupancy
-* Worst-case occupancy
-* Overflow probability
-* Total overflow
-
-Optional: enable plotting for quick visualization.
+* Printed statistics
+* Graphs (occupancy and overflow)
 
 ---
 
-## 📈 Outputs
+### 2. Web Application
 
-### Quantitative Metrics
+```bash
+python app.py
+```
 
-* **Average Occupancy**
-* **Worst-case Occupancy**
-* **Overflow Probability**
-* **Total Overflow Volume**
+Open in browser:
 
-### Visualization
+```
+http://127.0.0.1:5000/
+```
 
-* **Time-Series Occupancy Curve**
-
-  * Highlights demand trends
-  * Reveals capacity stress periods
+Upload a CSV file to view results.
 
 ---
 
-## 🧪 Assumptions & Limitations
+## Requirements
 
-* Deterministic input sequences (no stochastic arrival modeling yet)
-* No patient-level heterogeneity (length-of-stay not explicitly modeled)
-* Capacity is static
-* No prioritization or triage logic
+Install dependencies:
 
----
-
-## 🔧 Potential Extensions
-
-This framework is intentionally modular. Future improvements include:
-
-### 1. Statistical Modeling
-
-* Poisson / Non-homogeneous Poisson arrivals
-* Survival analysis for discharge modeling
-* Markov or semi-Markov occupancy transitions
-
-### 2. Forecasting
-
-* Time-series models (ARIMA, Prophet)
-* Seasonal trend decomposition
-* Real-time adaptive prediction
-
-### 3. Decision Optimization
-
-* Capacity planning under constraints
-* Cost vs overflow trade-off analysis
-* Scenario-based simulation (surge events)
-
-### 4. System Design
-
-* REST API integration
-* Dashboard visualization
-* Multi-hospital network modeling
+```bash
+pip install pandas matplotlib flask
+```
 
 ---
 
-## 🧩 Design Philosophy
+## Applications
 
-The system follows **separation of concerns**:
-
-* `simulation.py` → computational core
-* `app.py` → presentation layer
-* `cli.py` → lightweight interface
-
-This enables:
-
-* Reusability
-* Testability
-* Scalability
+* Hospital capacity planning
+* Resource allocation
+* Risk assessment under uncertainty
+* Operational decision support
 
 ---
 
-## 📌 Summary
+## Limitations
 
-This project demonstrates how **probabilistic simulation + time-series analysis** can transform raw hospital flow data into actionable insights for capacity planning.
-
-It bridges:
-
-* Statistical modeling
-* Systems simulation
-* Practical decision support
+* Assumes historical data reflects future trends
+* Does not model seasonality or external events
+* Simplifies patient flow dynamics
 
 ---
 
-If you want, I can next:
+## Future Improvements
 
-* make this README look like a **top-tier GitHub project (badges, visuals, diagrams)**
-* or add a **methodology section with citations like a research paper**
+* Integrate time-series forecasting models
+* Add real-time data support
+* Extend to multi-hospital systems
+* Improve UI and analytics
+
+---
+
+## Summary
+
+This project demonstrates how probabilistic simulation can be used to model uncertain real-world systems. By combining simulation with visualization, it provides a practical tool for analyzing hospital capacity and planning for demand variability.
